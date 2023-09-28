@@ -1,0 +1,42 @@
+key-tag 0: normal
+				1: warning  input-key : same as last; empty
+				2: error 		input-key different with last
+
+ip-tag			
+region-tag	0:正常
+						5
+						10
+						20
+						30
+
+mac optionid code time ip region key-in key-out key-tag(0/1/2) ip-tag  region-tag
+
+table mac
+id mac optionId
+
+table code
+id code macId
+
+table ip
+id ip
+
+table region
+id region
+
+table codeWarn
+code mac
+
+table OptionWarn
+mac optionid
+
+table time
+start-time  end-time  interval
+
+table macInvalid
+tableMacId msg
+
+
+
+END DATA
+DURING
+TIMES

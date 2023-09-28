@@ -1,0 +1,8 @@
+{
+  "data_dir":     "./source_data",
+  "out_dir":      "./database",
+  "end_date":     "2023-09-09",
+  "log_level":     "debug",
+  "interval":     3,
+  "times":        4
+}
