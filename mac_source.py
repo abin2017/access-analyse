@@ -31,23 +31,19 @@ def verify_data_file_exist(end_date, during):
             raise ValueError(err_str)
 
 
-def open_data_file(f_path):
-    # source_dir = get_value(CONF_DATA_DIR)
-    pass
+def open_data_file(s_date):
+    source_dir = get_value(CONF_DATA_DIR)
+    f_path = source_dir + '/' + s_date + SRC_DATA_SUFFIX
+    file = open(f_path)
+    return file
 
 
 def close_data_file(handle):
-    pass
+    handle.close()
 
 
-def read_data_line(handle, buffer):
-    '''
-    days = 0
-    while days < during:
-        f = get_value(CONF_DATA_DIR) + '/' + make_new_date_str(end_date, days) + SRC_DATA_SUFFIX
-        if not os.path.exists(f):
-            err_str = '{} source data not exist'.format(f)
-            logger.error()
-            raise ValueError(err_str)
-    '''
-    pass
+def read_data_line(handle):
+    line = handle.readline()
+    if not line:
+        return None
+    return line

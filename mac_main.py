@@ -21,8 +21,14 @@ def _make_db_out_path():
 
 
 def _parse_one_source_file(db: MacDatabase, f_path: str):
+    h = open_data_file(f_path)
+    line = read_data_line(h)
 
-    pass
+    while line is not None:
+        # todo
+        line = read_data_line(h)
+
+    close_data_file(h)
 
 
 def main():
@@ -53,4 +59,8 @@ def main():
 
 
 if __name__ == '__main__':
-    main()
+    # main()
+    d = MacDatabase('test.db')
+    d.connect()
+    d.test()
+    d.disconnect()
