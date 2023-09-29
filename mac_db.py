@@ -3,6 +3,20 @@ import sqlite3
 from mac_logger import LogManager as logger
 
 
+class ConsKeyCode:
+    WARN_SAME_LAST = 1
+    WARN_REQ_KEY_EMPTY = 2
+    ERROR_DIFFERENT = 3
+    ERROR_NEW_KEY_EMPTY = 4
+
+
+class ConsRGNCode:
+    CHANGE_IN_5MIN = 1
+    CHANGE_IN_10MIN = 2
+    CHANGE_IN_20MIN = 3
+    CHANGE_IN_30MIN = 4
+
+
 class Constable:
     LOGIN = 'login'
     MAC = 'mac'
@@ -14,6 +28,7 @@ class Constable:
     WARN_IP = 'warn_ip'
     WARN_REGION = 'warn_region'
     WARN_KEY = 'warn_key'
+    WARN_OPTION = 'warn_option'
 
 
 class ConsColumn:
@@ -63,7 +78,7 @@ class MacDatabase:
             {}      INTEGER NOT NULL,
             {}      INTEGER NOT NULL,
             {}      TEXT,
-            {}      TEXT    NOT NULL
+            {}      TEXT
         )'''.format(Constable.LOGIN, ConsColumn.ID, ConsColumn.MAC, ConsColumn.CODE, ConsColumn.IP, ConsColumn.REGION,
                     ConsColumn.TIME,
                     ConsColumn.KEY_IN, ConsColumn.KEY_OUT)
@@ -156,13 +171,20 @@ class MacDatabase:
         self.cursor.execute(sql)
         self.connection.commit()
 
+        # create warn_option
+        sql = '''CREATE TABLE {} (
+            {}  INTEGER NOT NULL
+        )'''.format(Constable.WARN_OPTION, ConsColumn.MAC)
+        self.cursor.execute(sql)
+        self.connection.commit()
+
     def disconnect(self):
         if self.cursor:
             self.cursor.close()
         if self.connection:
             self.connection.close()
 
-    def query_table(self, table: str, *args, **kwargs):
+    def query_table2(self, table: str, args: list, kwargs: dict, condition=None):
         sql_from = ' FROM {} '.format(table)
         sql_targets = 'SELECT '
         sql_where = ''
@@ -188,6 +210,9 @@ class MacDatabase:
                 i += 1
         sql = sql_targets + sql_from + sql_where
 
+        if condition is not None:
+            sql += ' ' + condition
+
         # 执行SQL语句,传入条件参数
         self.cursor.execute(sql)
         # 'SELECT name, age FROM user WHERE id=?;'
@@ -195,7 +220,10 @@ class MacDatabase:
         # 获取查询结果
         return self.cursor.fetchall()
 
-    def insert_table(self, table: str, **kwargs):
+    def query_table(self, table: str, *args, **kwargs):
+        return self.query_table2(table, args, kwargs)
+
+    def insert_table2(self, table: str, kwargs: dict):
         # sql = "INSERT INTO users(name, age) VALUES(?, ?)"
         values = []
         str_con = '('
@@ -216,6 +244,9 @@ class MacDatabase:
         self.connection.commit()
 
         return self.cursor.lastrowid
+
+    def insert_table(self, table: str, **kwargs):
+        return self.insert_table2(table, kwargs)
 
     def update_table(self, table: str, condition: dict, update: dict):
         # sql = "UPDATE users SET age=? WHERE id=?"
@@ -246,13 +277,64 @@ class MacDatabase:
         self.cursor.execute(sql, values)
         self.connection.commit()
 
+    def insert_mac(self, mac, optionId):
+        records = self.query_table2(Constable.MAC, [ConsColumn.ID],
+                                    {ConsColumn.MAC: mac, ConsColumn.OPTION_ID: optionId})
+        if len(records) == 0 or len(records[0]) == 0:
+            return self.insert_table2(Constable.MAC, {ConsColumn.MAC: mac, ConsColumn.OPTION_ID: optionId})
+        else:
+            return records[0][0]
+
+    def insert_ICR(self, table, data):
+        column = ''
+        if table == Constable.IP:
+            column = ConsColumn.IP
+        elif table == Constable.CODE:
+            column = ConsColumn.CODE
+        elif table == Constable.REGION:
+            column = ConsColumn.REGION
+        else:
+            raise ValueError('Not support table {}'.format(table))
+        records = self.query_table2(table, [ConsColumn.ID], {column: data})
+        if len(records) == 0 or len(records[0]) == 0:
+            return self.insert_table2(table, {column: data})
+        else:
+            return records[0][0]
+
+    def insert_login(self, mac, code, ip, region, time, key_in=None, key_out=None):
+        data = {ConsColumn.MAC: mac,
+                ConsColumn.CODE: code,
+                ConsColumn.IP: ip,
+                ConsColumn.REGION: region,
+                ConsColumn.TIME: time}
+        if key_in is not None:
+            data[ConsColumn.KEY_IN] = key_in
+        if key_out is not None:
+            data[ConsColumn.KEY_OUT] = key_out
+        return self.insert_table2(Constable.LOGIN, data)
+
+    def insert_warn_code(self, code, mac1, mac2):
+        data = {ConsColumn.CODE: code,
+                ConsColumn.MAC1: mac1,
+                ConsColumn.MAC2: mac2}
+        records = self.query_table2(Constable.WARN_CODE, [ConsColumn.CODE], data)
+        if len(records) == 0 or len(records[0]) == 0:
+            return self.insert_table2(Constable.WARN_CODE, data)
+
+    def insert_warn_option(self, mac):
+        records = self.query_table2(Constable.WARN_OPTION, [ConsColumn.MAC], {ConsColumn.MAC: mac})
+        if len(records) == 0 or len(records[0]) == 0:
+            return self.insert_table2(Constable.WARN_OPTION, {ConsColumn.MAC: mac})
+
     def test(self):
         print(self.insert_table(Constable.LOGIN, mac=1, code=2, ip=3, region=1, time=12345, key_in="xsdf",
-                                  key_out="sdf"))
+                                key_out="sdf"))
         print(self.insert_table(Constable.LOGIN, mac=1, code=2, ip=3, region=1, time=12345, key_in="qwewr",
-                                  key_out="1234556"))
+                                key_out="1234556"))
         print(self.insert_table(Constable.LOGIN, mac=2, code=2, ip=3, region=1, time=12345, key_in="qwewr",
-                                  key_out="1234556"))
+                                key_out="1234556"))
         print(self.query_table(Constable.LOGIN, 'code', 'mac', id=2))
         self.update_table(Constable.LOGIN, {'id': 2}, {'code': 3})
         print(self.query_table(Constable.LOGIN, 'code', 'mac', id=2))
+        print(self.insert_table(Constable.LOGIN, mac1=2, code=2, ip=3, region=1, time=12345, key_in="qwewr",
+                                key_out="1234556"))

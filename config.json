@@ -2,7 +2,9 @@
   "data_dir":     "./source_data",
   "out_dir":      "./database",
   "end_date":     "2023-09-09",
-  "log_level":     "debug",
+  "log_level":    "debug",
+  "log_dir":      "debug_logs",
   "interval":     3,
-  "times":        4
+  "times":        4,
+  "time_max_interval": 10
 }

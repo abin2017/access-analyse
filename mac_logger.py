@@ -1,11 +1,13 @@
 import logging
+import os
 import sys
+from datetime import datetime
+
 import config
 
 
 class LogManager:
-    LOG_FILE = "log.txt"
-    LOG_FORMAT = "%(asctime)s - %(levelname)s - %(message)s"
+    LOG_FORMAT = '%(asctime)s [%(levelname)s] %(filename)s:%(lineno)d - %(funcName)s() - %(message)s'
 
     @classmethod
     def get_logger(cls):
@@ -17,14 +19,30 @@ class LogManager:
     def configure_logger():
         level = config.get_value(config.CONF_LOG_LEVEL)
         i_level = logging.DEBUG
+        log_file = './log.txt'
 
-        if level == "warn":
-            i_level = logging.WARN
-        elif level == "error":
-            i_level = logging.ERROR
-        elif level == "info":
-            i_level = logging.INFO
-        logging.basicConfig(filename=LogManager.LOG_FILE, format=LogManager.LOG_FORMAT, level=i_level)
+        try:
+            if level == "warn":
+                i_level = logging.WARN
+            elif level == "error":
+                i_level = logging.ERROR
+            elif level == "info":
+                i_level = logging.INFO
+
+            log_dir = config.get_value(config.CONF_LOG_DIR)
+            if log_dir:
+                if not os.path.exists(log_dir):
+                    os.makedirs(log_dir)
+                current_time = datetime.now()
+                time_str = current_time.strftime("%Y-%m-%d_%H-%M-%S")
+                log_file = '{}/{}.txt'.format(log_dir, time_str)
+        except Exception as e:
+            print(e)
+
+        if os.path.exists(log_file):
+            os.remove(log_file)
+
+        logging.basicConfig(filename=log_file, format=LogManager.LOG_FORMAT, level=i_level)
 
         # 创建一个 StreamHandler，用于将日志同时输出到标准输出
         stream_handler = logging.StreamHandler(sys.stdout)

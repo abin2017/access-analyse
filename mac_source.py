@@ -29,6 +29,7 @@ def verify_data_file_exist(end_date, during):
             err_str = '{} source data not exist'.format(f)
             logger.error()
             raise ValueError(err_str)
+        days += 1
 
 
 def open_data_file(s_date):

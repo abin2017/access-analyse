@@ -6,6 +6,8 @@ CONF_END_DATA = "end_date"
 CONF_INTERVAL = "interval"
 CONF_TIMES = "times"
 CONF_LOG_LEVEL = "log_level"
+CONF_LOG_DIR = "log_dir"
+CONF_MAX_TIME_INTER = "time_max_interval"
 
 CONFIG_FILE = "config.json"
 DEFAULT_VALUE = None
