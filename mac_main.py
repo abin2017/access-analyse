@@ -46,19 +46,19 @@ def _process_ip_and_region(db: MacDatabase, login_id, ip, region, timestamp, dat
 
     if len(data):
         new_timestamp = data[3]
-        if new_timestamp > timestamp + 30 * 60:
+        if new_timestamp <= timestamp + 5 * 60:
             for t in table:
                 db.insert_table2(t, {ConsColumn.LOGIN1: data[1], ConsColumn.LOGIN2: login_id,
                                      ConsColumn.WARN: ConsRGNCode.CHANGE_IN_30MIN})
-        elif new_timestamp > timestamp + 20 * 60:
+        elif new_timestamp <= timestamp + 10 * 60:
             for t in table:
                 db.insert_table2(t, {ConsColumn.LOGIN1: data[1], ConsColumn.LOGIN2: login_id,
                                      ConsColumn.WARN: ConsRGNCode.CHANGE_IN_20MIN})
-        elif new_timestamp > timestamp + 10 * 60:
+        elif new_timestamp <= timestamp + 20 * 60:
             for t in table:
                 db.insert_table2(t, {ConsColumn.LOGIN1: data[1], ConsColumn.LOGIN2: login_id,
                                      ConsColumn.WARN: ConsRGNCode.CHANGE_IN_10MIN})
-        elif new_timestamp > timestamp + 5 * 60:
+        elif new_timestamp <= timestamp + 30 * 60:
             for t in table:
                 db.insert_table2(t, {ConsColumn.LOGIN1: data[1], ConsColumn.LOGIN2: login_id,
                                      ConsColumn.WARN: ConsRGNCode.CHANGE_IN_5MIN})
@@ -166,6 +166,7 @@ def main():
                 j -= 1
             d.disconnect()
             end_date = make_new_date_str(end_date, during)
+            i += 1
 
     except Exception as e:
         logger.error(e)
