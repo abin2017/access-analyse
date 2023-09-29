@@ -139,8 +139,10 @@ class MacDatabase:
         sql = '''CREATE TABLE {} (
             {} INTEGER NOT NULL,
             {} INTEGER NOT NULL,
+            {} INTEGER NOT NULL,
+            {} INTEGER NOT NULL,
             {} INTEGER NOT NULL
-        )'''.format(Constable.WARN_TIME, ConsColumn.START, ConsColumn.END, ConsColumn.INTERVAL)
+        )'''.format(Constable.WARN_TIME, ConsColumn.LOGIN1, ConsColumn.LOGIN2, ConsColumn.START, ConsColumn.END, ConsColumn.INTERVAL)
         self.cursor.execute(sql)
         self.connection.commit()
 

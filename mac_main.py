@@ -104,12 +104,12 @@ def _parse_one_source_file(db: MacDatabase, f_path: str, param: dict):
             res = db.query_table2(Constable.LOGIN,
                                   [ConsColumn.ID, ConsColumn.IP, ConsColumn.REGION, ConsColumn.TIME, ConsColumn.KEY_OUT,
                                    ConsColumn.KEY_IN],
-                                  {ConsColumn.MAC: mac_id}, 'ORDER BY id DESC LIMIT 1')
-            if len(res) and len(res[0]):
-                old_data = res[0]
+                                  {ConsColumn.MAC: mac_id}, 'ORDER BY {} DESC LIMIT 2'.format(ConsColumn.ID))
+            if len(res) == 2 and len(res[1]):
+                old_data = res[1]
                 _process_ip_and_region(db, login_id, ip_id, region_id, timestamp, old_data)
 
-                if key_out and key_out != 'auto_code_':
+                if key_out:
                     if key_out == old_data[4]:
                         db.insert_table2(Constable.WARN_KEY,
                                          {ConsColumn.LOGIN1: old_data[0], ConsColumn.LOGIN2: login_id,
@@ -120,14 +120,17 @@ def _parse_one_source_file(db: MacDatabase, f_path: str, param: dict):
                                           ConsColumn.WARN: ConsKeyCode.ERROR_DIFFERENT})
 
             if timestamp > param['timestamp'] + param['max_interval']:
-                db.insert_table2(Constable.WARN_TIME, {ConsColumn.START: param['timestamp'],
+                db.insert_table2(Constable.WARN_TIME, {ConsColumn.LOGIN1: param['last_login'],
+                                                       ConsColumn.LOGIN2: login_id,
+                                                       ConsColumn.START: param['timestamp'],
                                                        ConsColumn.END: timestamp,
                                                        ConsColumn.INTERVAL: timestamp - param['timestamp']})
-        res = db.query_table2(Constable.LOGIN,
-                              [ConsColumn.ID, ConsColumn.MAC],
-                              {ConsColumn.CODE: code_id}, 'AND {}!={} LIMIT 1'.format(ConsColumn.MAC, mac_id))
-        if len(res) and len(res[0]):
-            db.insert_warn_code(code_id, res[0][1], mac_id)
+        if code != 'auto_code_':
+            res = db.query_table2(Constable.LOGIN,
+                                  [ConsColumn.ID, ConsColumn.MAC],
+                                  {ConsColumn.CODE: code_id}, 'AND {}!={} LIMIT 1'.format(ConsColumn.MAC, mac_id))
+            if len(res) and len(res[0]):
+                db.insert_warn_code(code_id, res[0][1], mac_id)
 
         if option > 2:
             db.insert_warn_option(mac_id)
