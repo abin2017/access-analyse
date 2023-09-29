@@ -7,7 +7,8 @@ import config
 
 
 class LogManager:
-    LOG_FORMAT = '%(asctime)s [%(levelname)s] %(filename)s:%(lineno)d - %(funcName)s() - %(message)s'
+    # LOG_FORMAT = '%(asctime)s [%(levelname)s] %(filename)s:%(lineno)d - %(funcName)s() - %(message)s'
+    LOG_FORMAT = '%(asctime)s [%(levelname)s] - %(message)s'
 
     @classmethod
     def get_logger(cls):

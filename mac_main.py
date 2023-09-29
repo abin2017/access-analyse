@@ -1,3 +1,5 @@
+import sys
+
 from mac_db import MacDatabase, Constable, ConsColumn, ConsKeyCode, ConsRGNCode
 from mac_logger import LogManager as logger
 from mac_source import *
@@ -49,26 +51,58 @@ def _process_ip_and_region(db: MacDatabase, login_id, ip, region, timestamp, dat
         if new_timestamp <= timestamp + 5 * 60:
             for t in table:
                 db.insert_table2(t, {ConsColumn.LOGIN1: data[1], ConsColumn.LOGIN2: login_id,
-                                     ConsColumn.WARN: ConsRGNCode.CHANGE_IN_30MIN})
+                                     ConsColumn.WARN: ConsRGNCode.CHANGE_IN_5MIN})
         elif new_timestamp <= timestamp + 10 * 60:
             for t in table:
                 db.insert_table2(t, {ConsColumn.LOGIN1: data[1], ConsColumn.LOGIN2: login_id,
-                                     ConsColumn.WARN: ConsRGNCode.CHANGE_IN_20MIN})
+                                     ConsColumn.WARN: ConsRGNCode.CHANGE_IN_10MIN})
         elif new_timestamp <= timestamp + 20 * 60:
             for t in table:
                 db.insert_table2(t, {ConsColumn.LOGIN1: data[1], ConsColumn.LOGIN2: login_id,
-                                     ConsColumn.WARN: ConsRGNCode.CHANGE_IN_10MIN})
+                                     ConsColumn.WARN: ConsRGNCode.CHANGE_IN_20MIN})
         elif new_timestamp <= timestamp + 30 * 60:
             for t in table:
                 db.insert_table2(t, {ConsColumn.LOGIN1: data[1], ConsColumn.LOGIN2: login_id,
-                                     ConsColumn.WARN: ConsRGNCode.CHANGE_IN_5MIN})
+                                     ConsColumn.WARN: ConsRGNCode.CHANGE_IN_30MIN})
+
+
+def print_progress(iteration, total, prefix='', suffix='', decimals=1, bar_length=100):
+    """
+    Call in a loop to create terminal progress bar
+    @params:
+        iteration   - Required  : current iteration (Int)
+        total       - Required  : total iterations (Int)
+        prefix      - Optional  : prefix string (Str)
+        suffix      - Optional  : suffix string (Str)
+        decimals    - Optional  : positive number of decimals in percent complete (Int)
+        bar_length  - Optional  : character length of bar (Int)
+    """
+    str_format = "{0:." + str(decimals) + "f}"
+    percents = str_format.format(100 * (iteration / float(total)))
+    filled_length = int(round(bar_length * iteration / float(total)))
+    bar = '█' * filled_length + '-' * (bar_length - filled_length)
+
+    sys.stdout.write('\r%s |%s| %s%s %s(%d/%d)' % (prefix, bar, percents, '%', suffix, iteration, total)),
+
+    if iteration == total:
+        sys.stdout.write('\n')
+    sys.stdout.flush()
+
+
+def progress(iteration, total, prefix='', suffix=''):
+    print_progress(iteration, total, prefix=prefix, suffix=suffix, decimals=1, bar_length=100)
 
 
 def _parse_one_source_file(db: MacDatabase, f_path: str, param: dict):
+    total = get_total_data(f_path)
+    logger.debug('{} total lines {}'.format(f_path, total))
     h = open_data_file(f_path)
     line = read_data_line(h)
+    index = 0
 
     while line is not None:
+        progress(index + 1, total, prefix='Progress:', suffix='Complete')
+        index += 1
         result = line.split(",")
 
         time_string = '{} {}'.format(f_path, result[0])

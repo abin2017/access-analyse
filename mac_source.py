@@ -48,3 +48,11 @@ def read_data_line(handle):
     if not line:
         return None
     return line
+
+
+def get_total_data(s_date):
+    source_dir = get_value(CONF_DATA_DIR)
+    f_path = source_dir + '/' + s_date + SRC_DATA_SUFFIX
+    with open(f_path) as f:
+        line_count = sum(1 for _ in f)
+    return line_count
