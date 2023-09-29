@@ -1,5 +1,6 @@
 import os
 import sqlite3
+import collections
 from mac_logger import LogManager as logger
 
 
@@ -57,9 +58,22 @@ class MacDatabase:
         self.db_file = db_file
         self.connection = None
         self.cursor = None
+        self.optimize_mac_query = True
+        self.optimize_ip_query = True
+        self.optimize_region_query = True
+        self.optimize_code_query = True
+
         logger.debug(db_file)
         if os.path.exists(db_file):
             os.remove(db_file)
+        if self.optimize_mac_query:
+            self.o_mac = collections.defaultdict(int)
+        if self.optimize_ip_query:
+            self.o_ip = collections.defaultdict(int)
+        if self.optimize_region_query:
+            self.o_region = collections.defaultdict(int)
+        if self.optimize_code_query:
+            self.o_code = collections.defaultdict(int)
 
     def connect(self):
         self.connection = sqlite3.connect(self.db_file)
@@ -280,28 +294,50 @@ class MacDatabase:
         self.connection.commit()
 
     def insert_mac(self, mac, optionId):
-        records = self.query_table2(Constable.MAC, [ConsColumn.ID],
-                                    {ConsColumn.MAC: mac, ConsColumn.OPTION_ID: optionId})
-        if len(records) == 0 or len(records[0]) == 0:
-            return self.insert_table2(Constable.MAC, {ConsColumn.MAC: mac, ConsColumn.OPTION_ID: optionId})
+        if self.optimize_mac_query:
+            key = '{}O{}'.format(mac, optionId)
+            idx = self.o_mac[key]
+            if idx == 0:
+                idx = self.insert_table2(Constable.MAC, {ConsColumn.MAC: mac, ConsColumn.OPTION_ID: optionId})
+                self.o_mac[key] = idx
+            return idx
         else:
-            return records[0][0]
+            records = self.query_table2(Constable.MAC, [ConsColumn.ID],
+                                        {ConsColumn.MAC: mac, ConsColumn.OPTION_ID: optionId})
+            if len(records) == 0 or len(records[0]) == 0:
+                return self.insert_table2(Constable.MAC, {ConsColumn.MAC: mac, ConsColumn.OPTION_ID: optionId})
+            else:
+                return records[0][0]
 
     def insert_ICR(self, table, data):
         column = ''
+        o_dict = None
         if table == Constable.IP:
             column = ConsColumn.IP
+            if self.optimize_ip_query:
+                o_dict = self.o_ip
         elif table == Constable.CODE:
             column = ConsColumn.CODE
+            if self.optimize_code_query:
+                o_dict = self.o_code
         elif table == Constable.REGION:
             column = ConsColumn.REGION
+            if self.optimize_region_query:
+                o_dict = self.o_region
         else:
             raise ValueError('Not support table {}'.format(table))
-        records = self.query_table2(table, [ConsColumn.ID], {column: data})
-        if len(records) == 0 or len(records[0]) == 0:
-            return self.insert_table2(table, {column: data})
+        if o_dict is not None:
+            idx = o_dict[data]
+            if idx == 0:
+                idx = self.insert_table2(table, {column: data})
+                o_dict[data] = idx
+            return idx
         else:
-            return records[0][0]
+            records = self.query_table2(table, [ConsColumn.ID], {column: data})
+            if len(records) == 0 or len(records[0]) == 0:
+                return self.insert_table2(table, {column: data})
+            else:
+                return records[0][0]
 
     def insert_login(self, mac, code, ip, region, time, key_in=None, key_out=None):
         data = {ConsColumn.MAC: mac,
@@ -321,7 +357,12 @@ class MacDatabase:
                 ConsColumn.MAC2: mac2}
         records = self.query_table2(Constable.WARN_CODE, [ConsColumn.CODE], data)
         if len(records) == 0 or len(records[0]) == 0:
-            return self.insert_table2(Constable.WARN_CODE, data)
+            data1 = {ConsColumn.CODE: code,
+                     ConsColumn.MAC1: mac2,
+                     ConsColumn.MAC2: mac1}
+            records = self.query_table2(Constable.WARN_CODE, [ConsColumn.CODE], data1)
+            if len(records) == 0 or len(records[0]) == 0:
+                self.insert_table2(Constable.WARN_CODE, data)
 
     def insert_warn_option(self, mac):
         records = self.query_table2(Constable.WARN_OPTION, [ConsColumn.MAC], {ConsColumn.MAC: mac})
