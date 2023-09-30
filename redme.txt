@@ -1,42 +1,13 @@
-key-tag 0: normal
-				1: warning  input-key : same as last; empty
-				2: error 		input-key different with last
+config.json
+	"data_dir":     "./source_data",										// log文件放置的目录
+  "out_dir":      "./database",												// 生成sqlite database目录
+  "end_date":     "2023-09-08",                       // 开始解析LOG的时间，向前推
+  "log_level":    "debug",                            // 打印等级，没啥用
+  "log_dir":      "debug_logs",                       // 打印生成路径
+  "interval":     1,                                  // 一次解析几天的LOG    如有12天LOG，3天一次解析，解析4次  "interval"=3，"times"=4
+  "times":        6,                                  // 一共解析几次
+  "time_max_interval": 10,                            // 两次LOGIN请求之间相差大于10s 记录一次（不连续）
+  "database_dir": "./database/2023-09-30_11-14-50"    //使用此目录下的DB文件生成报告
 
-ip-tag			
-region-tag	0:正常
-						5
-						10
-						20
-						30
-
-mac optionid code time ip region key-in key-out key-tag(0/1/2) ip-tag  region-tag
-
-table mac
-id mac optionId
-
-table code
-id code macId
-
-table ip
-id ip
-
-table region
-id region
-
-table codeWarn
-code mac
-
-table OptionWarn
-mac optionid
-
-table time
-start-time  end-time  interval
-
-table macInvalid
-tableMacId msg
-
-
-
-END DATA
-DURING
-TIMES
+mac_main.py 启动解析LOG
+mac_report.py 启动生成报告
