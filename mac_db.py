@@ -16,6 +16,8 @@ class ConsRGNCode:
     CHANGE_IN_10MIN = 2
     CHANGE_IN_20MIN = 3
     CHANGE_IN_30MIN = 4
+    CHANGE_IN_60MIN = 5
+    CHANGE_IN_24HOUR = 6
 
 
 class Constable:
@@ -62,6 +64,7 @@ class MacDatabase:
         self.optimize_ip_query = True
         self.optimize_region_query = True
         self.optimize_code_query = True
+        self.optimize_warn_code_query = True
 
         logger.debug(db_file)
         if os.path.exists(db_file):
@@ -74,6 +77,9 @@ class MacDatabase:
             self.o_region = collections.defaultdict(int)
         if self.optimize_code_query:
             self.o_code = collections.defaultdict(int)
+        if self.optimize_warn_code_query:
+            self.o_warn_code = collections.defaultdict(int)
+            self.o_warn_code_save = collections.defaultdict(int)
 
     def connect(self):
         self.connection = sqlite3.connect(self.db_file)
@@ -156,7 +162,8 @@ class MacDatabase:
             {} INTEGER NOT NULL,
             {} INTEGER NOT NULL,
             {} INTEGER NOT NULL
-        )'''.format(Constable.WARN_TIME, ConsColumn.LOGIN1, ConsColumn.LOGIN2, ConsColumn.START, ConsColumn.END, ConsColumn.INTERVAL)
+        )'''.format(Constable.WARN_TIME, ConsColumn.LOGIN1, ConsColumn.LOGIN2, ConsColumn.START, ConsColumn.END,
+                    ConsColumn.INTERVAL)
         self.cursor.execute(sql)
         self.connection.commit()
 
@@ -339,7 +346,7 @@ class MacDatabase:
             else:
                 return records[0][0]
 
-    def insert_login(self, mac, code, ip, region, time, key_in=None, key_out=None):
+    def insert_login(self, mac, code, ip, region, time, key_in=None, key_out=None, auto_code=True):
         data = {ConsColumn.MAC: mac,
                 ConsColumn.CODE: code,
                 ConsColumn.IP: ip,
@@ -349,9 +356,21 @@ class MacDatabase:
             data[ConsColumn.KEY_IN] = key_in
         if key_out is not None:
             data[ConsColumn.KEY_OUT] = key_out
+
+        if auto_code is False and self.optimize_warn_code_query:
+            if code in self.o_warn_code:
+                self.o_warn_code[code].add(mac)
+            else:
+                self.o_warn_code[code] = {mac}
+
         return self.insert_table2(Constable.LOGIN, data)
 
-    def insert_warn_code(self, code, mac1, mac2):
+    def insert_warn_option(self, mac):
+        records = self.query_table2(Constable.WARN_OPTION, [ConsColumn.MAC], {ConsColumn.MAC: mac})
+        if len(records) == 0 or len(records[0]) == 0:
+            return self.insert_table2(Constable.WARN_OPTION, {ConsColumn.MAC: mac})
+
+    def __insert_warn_code(self, code, mac1, mac2):
         data = {ConsColumn.CODE: code,
                 ConsColumn.MAC1: mac1,
                 ConsColumn.MAC2: mac2}
@@ -364,10 +383,32 @@ class MacDatabase:
             if len(records) == 0 or len(records[0]) == 0:
                 self.insert_table2(Constable.WARN_CODE, data)
 
-    def insert_warn_option(self, mac):
-        records = self.query_table2(Constable.WARN_OPTION, [ConsColumn.MAC], {ConsColumn.MAC: mac})
-        if len(records) == 0 or len(records[0]) == 0:
-            return self.insert_table2(Constable.WARN_OPTION, {ConsColumn.MAC: mac})
+    def insert_warn_code(self, code, mac):
+        if self.optimize_warn_code_query:
+            s = self.o_warn_code[code]
+            set_len = len(s)
+            if set_len >= 2:
+                if code not in self.o_warn_code_save:
+                    sl = list(s)
+                    self.o_warn_code_save[code] = sl
+                    data = {ConsColumn.CODE: code,
+                            ConsColumn.MAC1: sl[0],
+                            ConsColumn.MAC2: sl[1]}
+                    self.insert_table2(Constable.WARN_CODE, data)
+                elif set_len != len(self.o_warn_code_save[code]):
+                    for item in s:
+                        if item != mac:
+                            self.o_warn_code_save[code].append(mac)
+                            data = {ConsColumn.CODE: code,
+                                    ConsColumn.MAC1: mac,
+                                    ConsColumn.MAC2: item}
+                            self.insert_table2(Constable.WARN_CODE, data)
+        else:
+            res = self.query_table2(Constable.LOGIN,
+                                    [ConsColumn.ID, ConsColumn.MAC],
+                                    {ConsColumn.CODE: code}, 'AND {}!={} LIMIT 1'.format(ConsColumn.MAC, mac))
+            if len(res) and len(res[0]):
+                self.__insert_warn_code(code, res[0][1], mac)
 
     def test(self):
         print(self.insert_table(Constable.LOGIN, mac=1, code=2, ip=3, region=1, time=12345, key_in="xsdf",

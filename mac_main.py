@@ -48,22 +48,30 @@ def _process_ip_and_region(db: MacDatabase, login_id, ip, region, timestamp, dat
 
     if len(data):
         new_timestamp = data[3]
-        if new_timestamp <= timestamp + 5 * 60:
+        if timestamp <= new_timestamp + 5 * 60:
             for t in table:
                 db.insert_table2(t, {ConsColumn.LOGIN1: data[1], ConsColumn.LOGIN2: login_id,
                                      ConsColumn.WARN: ConsRGNCode.CHANGE_IN_5MIN})
-        elif new_timestamp <= timestamp + 10 * 60:
+        elif timestamp <= new_timestamp + 10 * 60:
             for t in table:
                 db.insert_table2(t, {ConsColumn.LOGIN1: data[1], ConsColumn.LOGIN2: login_id,
                                      ConsColumn.WARN: ConsRGNCode.CHANGE_IN_10MIN})
-        elif new_timestamp <= timestamp + 20 * 60:
+        elif timestamp <= new_timestamp + 20 * 60:
             for t in table:
                 db.insert_table2(t, {ConsColumn.LOGIN1: data[1], ConsColumn.LOGIN2: login_id,
                                      ConsColumn.WARN: ConsRGNCode.CHANGE_IN_20MIN})
-        elif new_timestamp <= timestamp + 30 * 60:
+        elif timestamp <= new_timestamp + 30 * 60:
             for t in table:
                 db.insert_table2(t, {ConsColumn.LOGIN1: data[1], ConsColumn.LOGIN2: login_id,
                                      ConsColumn.WARN: ConsRGNCode.CHANGE_IN_30MIN})
+        elif timestamp <= new_timestamp + 60 * 60:
+            for t in table:
+                db.insert_table2(t, {ConsColumn.LOGIN1: data[1], ConsColumn.LOGIN2: login_id,
+                                     ConsColumn.WARN: ConsRGNCode.CHANGE_IN_60MIN})
+        elif timestamp <= new_timestamp + 24 * 60 * 60:
+            for t in table:
+                db.insert_table2(t, {ConsColumn.LOGIN1: data[1], ConsColumn.LOGIN2: login_id,
+                                     ConsColumn.WARN: ConsRGNCode.CHANGE_IN_24HOUR})
 
 
 def print_progress(iteration, total, prefix='', suffix='', decimals=1, bar_length=100):
@@ -125,7 +133,10 @@ def _parse_one_source_file(db: MacDatabase, f_path: str, param: dict):
         ip_id = db.insert_ICR(Constable.IP, ip)
         region_id = db.insert_ICR(Constable.REGION, region)
         code_id = db.insert_ICR(Constable.CODE, code)
-        login_id = db.insert_login(mac_id, code_id, ip_id, region_id, timestamp, key, key_out)
+        b_auto_code = True
+        if code != 'auto_code_':
+            b_auto_code = False
+        login_id = db.insert_login(mac_id, code_id, ip_id, region_id, timestamp, key, key_out, b_auto_code)
 
         if key is None:
             db.insert_table2(Constable.WARN_KEY, {ConsColumn.LOGIN1: login_id, ConsColumn.LOGIN2: login_id,
@@ -159,12 +170,16 @@ def _parse_one_source_file(db: MacDatabase, f_path: str, param: dict):
                                                        ConsColumn.START: param['timestamp'],
                                                        ConsColumn.END: timestamp,
                                                        ConsColumn.INTERVAL: timestamp - param['timestamp']})
+        '''
         if code != 'auto_code_':
             res = db.query_table2(Constable.LOGIN,
                                   [ConsColumn.ID, ConsColumn.MAC],
                                   {ConsColumn.CODE: code_id}, 'AND {}!={} LIMIT 1'.format(ConsColumn.MAC, mac_id))
             if len(res) and len(res[0]):
                 db.insert_warn_code(code_id, res[0][1], mac_id)
+        '''
+        if code != 'auto_code_':
+            db.insert_warn_code(code_id, mac_id)
 
         if option > 2:
             db.insert_warn_option(mac_id)
