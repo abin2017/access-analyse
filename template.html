@@ -1,0 +1,36 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>{{title}}}</title>
+  <style>
+    .table {
+      border-collapse: collapse;
+      width: 100%;
+    }
+    .table th, .table td {
+      border: 1px solid #ddd;
+      padding: 8px;
+      text-align: left;
+    }
+
+  </style>
+</head>
+<body>
+  <h1>Continuity of requests</h1>
+  {{ cont_req_html|safe }}
+  <h1>Region Change</h1>
+  {{ region_html|safe }}
+  <h1>IP Change</h1>
+  {{ ip_html|safe }}
+  <h1>Option Warning</h1>
+  {{ option_html|safe }}
+  <h1>Key Warning</h1>
+  {{ key_html|safe }}
+  <h1>Code Warn</h1>
+  {{ code_html|safe }}
+  <h1>Mac IN Country</h1>
+  {{ mic1_html|safe }}
+  <h1>Visit IN Country</h1>
+  {{ mic2_html|safe }}
+</body>
+</html>

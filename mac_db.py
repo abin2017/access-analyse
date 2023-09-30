@@ -56,7 +56,7 @@ class ConsColumn:
 
 
 class MacDatabase:
-    def __init__(self, db_file):
+    def __init__(self, db_file, remove=True):
         self.db_file = db_file
         self.connection = None
         self.cursor = None
@@ -67,7 +67,8 @@ class MacDatabase:
         self.optimize_warn_code_query = True
 
         logger.debug(db_file)
-        if os.path.exists(db_file):
+        self.need_removed = remove
+        if remove and os.path.exists(db_file):
             os.remove(db_file)
         if self.optimize_mac_query:
             self.o_mac = collections.defaultdict(int)
@@ -86,7 +87,8 @@ class MacDatabase:
         self.cursor = self.connection.cursor()
 
         # create tables
-
+        if self.need_removed is False:
+            return
         # create login
         sql = '''CREATE TABLE {} (
             {}      INTEGER PRIMARY KEY AUTOINCREMENT
@@ -409,6 +411,10 @@ class MacDatabase:
                                     {ConsColumn.CODE: code}, 'AND {}!={} LIMIT 1'.format(ConsColumn.MAC, mac))
             if len(res) and len(res[0]):
                 self.__insert_warn_code(code, res[0][1], mac)
+
+    def exec_query(self, sql):
+        self.cursor.execute(sql)
+        return self.cursor.fetchall()
 
     def test(self):
         print(self.insert_table(Constable.LOGIN, mac=1, code=2, ip=3, region=1, time=12345, key_in="xsdf",

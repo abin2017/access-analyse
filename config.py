@@ -8,9 +8,11 @@ CONF_TIMES = "times"
 CONF_LOG_LEVEL = "log_level"
 CONF_LOG_DIR = "log_dir"
 CONF_MAX_TIME_INTER = "time_max_interval"
+CONF_DB_REPORT_DIR = 'database_dir'
 
 CONFIG_FILE = "config.json"
 DEFAULT_VALUE = None
+
 config = {}
 
 
