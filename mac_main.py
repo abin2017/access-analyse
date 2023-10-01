@@ -50,27 +50,27 @@ def _process_ip_and_region(db: MacDatabase, login_id, ip, region, timestamp, dat
         new_timestamp = data[3]
         if timestamp <= new_timestamp + 5 * 60:
             for t in table:
-                db.insert_table2(t, {ConsColumn.LOGIN1: data[1], ConsColumn.LOGIN2: login_id,
+                db.insert_table2(t, {ConsColumn.LOGIN1: data[0], ConsColumn.LOGIN2: login_id,
                                      ConsColumn.WARN: ConsRGNCode.CHANGE_IN_5MIN})
         elif timestamp <= new_timestamp + 10 * 60:
             for t in table:
-                db.insert_table2(t, {ConsColumn.LOGIN1: data[1], ConsColumn.LOGIN2: login_id,
+                db.insert_table2(t, {ConsColumn.LOGIN1: data[0], ConsColumn.LOGIN2: login_id,
                                      ConsColumn.WARN: ConsRGNCode.CHANGE_IN_10MIN})
         elif timestamp <= new_timestamp + 20 * 60:
             for t in table:
-                db.insert_table2(t, {ConsColumn.LOGIN1: data[1], ConsColumn.LOGIN2: login_id,
+                db.insert_table2(t, {ConsColumn.LOGIN1: data[0], ConsColumn.LOGIN2: login_id,
                                      ConsColumn.WARN: ConsRGNCode.CHANGE_IN_20MIN})
         elif timestamp <= new_timestamp + 30 * 60:
             for t in table:
-                db.insert_table2(t, {ConsColumn.LOGIN1: data[1], ConsColumn.LOGIN2: login_id,
+                db.insert_table2(t, {ConsColumn.LOGIN1: data[0], ConsColumn.LOGIN2: login_id,
                                      ConsColumn.WARN: ConsRGNCode.CHANGE_IN_30MIN})
         elif timestamp <= new_timestamp + 60 * 60:
             for t in table:
-                db.insert_table2(t, {ConsColumn.LOGIN1: data[1], ConsColumn.LOGIN2: login_id,
+                db.insert_table2(t, {ConsColumn.LOGIN1: data[0], ConsColumn.LOGIN2: login_id,
                                      ConsColumn.WARN: ConsRGNCode.CHANGE_IN_60MIN})
         elif timestamp <= new_timestamp + 24 * 60 * 60:
             for t in table:
-                db.insert_table2(t, {ConsColumn.LOGIN1: data[1], ConsColumn.LOGIN2: login_id,
+                db.insert_table2(t, {ConsColumn.LOGIN1: data[0], ConsColumn.LOGIN2: login_id,
                                      ConsColumn.WARN: ConsRGNCode.CHANGE_IN_24HOUR})
 
 
