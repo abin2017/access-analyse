@@ -65,12 +65,30 @@ def _table_get_warn_time(d: MacDatabase):
 
 
 def _table_get_warn_region(d: MacDatabase):
-    region = {'Prev Login': [], 'Next Login': [], 'Interval': []}
+    region = {'Prev Login': [], 'Next Login': [], 'Interval': [], 'Mac': [], 'Option ID': []}
     sql = 'SELECT {},{},{} FROM {}'.format(ConsColumn.LOGIN1, ConsColumn.LOGIN2, ConsColumn.WARN, Constable.WARN_REGION)
     result = d.exec_query(sql)
     for item in result:
+        sql_1 = 'SELECT {} FROM {} WHERE {}={} OR {}={}'.format(ConsColumn.MAC, Constable.LOGIN, ConsColumn.ID,
+                                                                item[0], ConsColumn.ID, item[1])
+        result_1 = d.exec_query(sql_1)
+        if len(result_1) == 2 and result_1[0][0] == result_1[1][0]:
+            sql_1 = 'SELECT {},{} FROM {}'.format(ConsColumn.MAC, ConsColumn.OPTION_ID, Constable.MAC)
+            result_1 = d.exec_query(sql_1)
+
+            if len(result_1) <= 0 or len(result_1[0]) != 2:
+                logger.warn('{} got mac error1'.format(sql_1))
+                logger.warn(result_1)
+                continue
+        else:
+            logger.warn('{} got mac error2'.format(sql_1))
+            logger.warn(result_1)
+            continue
+
         region['Prev Login'].append(item[0])
         region['Next Login'].append(item[1])
+        region['Mac'].append(result_1[0][0])
+        region['Option ID'].append(result_1[0][1])
         if item[2] == ConsRGNCode.CHANGE_IN_5MIN:
             region['Interval'].append('In 5mins')
         elif item[2] == ConsRGNCode.CHANGE_IN_10MIN:
@@ -88,12 +106,29 @@ def _table_get_warn_region(d: MacDatabase):
 
 
 def _table_get_warn_ip(d: MacDatabase):
-    region = {'Prev Login': [], 'Next Login': [], 'Interval': []}
+    region = {'Prev Login': [], 'Next Login': [], 'Interval': [], 'Mac': [], 'Option ID': []}
     sql = 'SELECT {},{},{} FROM {}'.format(ConsColumn.LOGIN1, ConsColumn.LOGIN2, ConsColumn.WARN, Constable.WARN_IP)
     result = d.exec_query(sql)
     for item in result:
+        sql_1 = 'SELECT {} FROM {} WHERE {}={} OR {}={}'.format(ConsColumn.MAC, Constable.LOGIN, ConsColumn.ID,
+                                                                item[0], ConsColumn.ID, item[1])
+        result_1 = d.exec_query(sql_1)
+        if len(result_1) == 2 and result_1[0][0] == result_1[1][0]:
+            sql_1 = 'SELECT {},{} FROM {}'.format(ConsColumn.MAC, ConsColumn.OPTION_ID, Constable.MAC)
+            result_1 = d.exec_query(sql_1)
+
+            if len(result_1) <= 0 or len(result_1[0]) != 2:
+                logger.warn('{} got mac error1'.format(sql_1))
+                logger.warn(result_1)
+                continue
+        else:
+            logger.warn('{} got mac error2'.format(sql_1))
+            logger.warn(result_1)
+            continue
         region['Prev Login'].append(item[0])
         region['Next Login'].append(item[1])
+        region['Mac'].append(result_1[0][0])
+        region['Option ID'].append(result_1[0][1])
         if item[2] == ConsRGNCode.CHANGE_IN_5MIN:
             region['Interval'].append('In 5mins')
         elif item[2] == ConsRGNCode.CHANGE_IN_10MIN:
@@ -228,16 +263,16 @@ def _chart_create_funnel(d: MacDatabase):
     '''
     funnel1 = (
         Bar(init_opts=opts.InitOpts(width="1800px", height="1000px", theme=ThemeType.LIGHT, is_horizontal_center=True))
-        .add_xaxis(list_country)
-        .add_yaxis("Mac", list_box_counts)
-        .set_global_opts(title_opts=opts.TitleOpts(title="Mac Counts"))
+            .add_xaxis(list_country)
+            .add_yaxis("Mac", list_box_counts)
+            .set_global_opts(title_opts=opts.TitleOpts(title="Mac Counts"))
     )
 
     funnel2 = (
         Bar(init_opts=opts.InitOpts(width="1800px", height="1000px", theme=ThemeType.LIGHT, is_horizontal_center=True))
-        .add_xaxis(list_country)
-        .add_yaxis("Request", list_req_counts)
-        .set_global_opts(title_opts=opts.TitleOpts(title="Request Counts"))
+            .add_xaxis(list_country)
+            .add_yaxis("Request", list_req_counts)
+            .set_global_opts(title_opts=opts.TitleOpts(title="Request Counts"))
     )
 
     return funnel1.render_embed(), funnel2.render_embed()
@@ -321,14 +356,15 @@ def main():
         else:
             list_login.append(0)
 
-    bar = Bar(init_opts=opts.InitOpts(width="1800px", height="1000px", theme=ThemeType.LIGHT, is_horizontal_center=True))
+    bar = Bar(
+        init_opts=opts.InitOpts(width="1800px", height="1000px", theme=ThemeType.LIGHT, is_horizontal_center=True))
     bar.add_xaxis(list_date)
     bar.add_yaxis('MacCount', list_mac)
     bar.add_yaxis('CountryCount', list_region)
     bar.add_yaxis('VisitCount', list_login)
     bar.set_global_opts(title_opts=opts.TitleOpts(title='Statistics', subtitle='{}-{}'.format(
-                                                                remove_extension(db_list[0]),
-                                                                remove_extension(db_list[-1]))))
+        remove_extension(db_list[0]),
+        remove_extension(db_list[-1]))))
     bar.render(db_dir + '/Statistics.html')
 
 
